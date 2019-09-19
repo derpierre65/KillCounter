@@ -158,8 +158,8 @@ function KillCounter_OnLoad()
         elseif event == "UPDATE_MOUSEOVER_UNIT" and UnitExists('mouseover') then
             local type, id = KillCounter_GetGUIDType(UnitGUID("mouseover"));
             if (KillCounterCharDB.kills ~= nil and KillCounterCharDB.kills[type] ~= nil and KillCounterCharDB.kills[type][id] ~= nil) then
-                GameTooltip:AddLine(" ");
                 GameTooltip:AddLine(KillCounter.L["Kills"] .. ": " .. KillCounterCharDB.kills[type][id].kills);
+                GameTooltip:AddLine(KillCounter.L["LastKill"] .. " " .. KillCounter_formatTime(KillCounterCharDB.kills[type][id].last));
                 GameTooltip:Show()
             end
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
