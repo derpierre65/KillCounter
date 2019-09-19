@@ -3,7 +3,7 @@
 ## Author: derpierre65
 ## Notes: This addon count all player and monster kills.
 ## Notes-deDE: Dieses AddOn zählt alle getätigten Spieler und Monster Kills.
-## Version: 1.0.2
+## Version: 1.0.3
 ## SavedVariablesPerCharacter: KillCounterCharDB
 
 KillCounter.xml

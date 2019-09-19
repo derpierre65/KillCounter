@@ -1,3 +1,4 @@
+local _, KillCounter = ...
 local maxRows = 22
 
 local function stringSplit(inputstr, sep)
@@ -26,59 +27,51 @@ end
 
 local function KillCounter_formatTime(time)
     if (time == nil) then
-        return "Unbekannt"
+        return KillCounter.L["Unknown"]
     end
 
-    local difference = GetTime() - time
-    if (difference < 60) then
-        if (difference <= 1) then
-            return "vor einer Sekunde"
+    local seconds = math.floor(GetTime() - time)
+    if (seconds < 60) then
+        if (seconds <= 1) then
+            return KillCounter.L["timeFormatSeconds_singular"]
         else
-            return "vor " .. math.floor(difference) .. " Sekunden"
+            return string.format(KillCounter.L["timeFormatSeconds_plural"], seconds)
         end
-    elseif difference < 3600 then
-        local minutes = math.floor(difference / 60)
+    elseif seconds < 3600 then
+        local minutes = math.floor(seconds / 60)
         if (minutes <= 1) then
-            return "vor einer Minute"
+            return KillCounter.L["timeFormatMinutes_singular"]
         else
-            return "vor " .. minutes .. " Minuten"
+            return string.format(KillCounter.L["timeFormatMinutes_plural"], minutes)
         end
-    elseif difference < 86400 then
-        local hours = math.floor(difference / 3600)
+    elseif seconds < 86400 then
+        local hours = math.floor(seconds / 3600)
         if (hours <= 1) then
-            return "vor einer Stunde"
+            return KillCounter.L["timeFormatHours_singular"]
         else
-            return "vor " .. hours .. " Stunden"
+            return string.format(KillCounter.L["timeFormatHours_plural"], hours)
         end
     else
-        local days = math.floor(difference / 86400)
+        local days = math.floor(seconds / 86400)
         if (days <= 1) then
-            return "vor einem Tag"
+            return KillCounter.L["timeFormatDays_singular"]
         else
-            return "vor " .. days .. " Tage"
+            return string.format(KillCounter.L["timeFormatDays_plural"], days)
         end
-    end
-end
-
-function KillCounterListFrameSortOption_SetValue(newValue)
-    UIDropDownMenu_SetSelectedID(KillCounterListFrameSortOption, newValue:GetID());
-    KillCounterCharDB.options.sort = newValue:GetID()
-    if KillCounterListFrame:IsVisible() then
-        KillCounter_Update()
     end
 end
 
 local function KillCounter_SortMenu(frame, level, menuList)
     local sorts = {
-        "Name aufsteigend", -- 1
-        "Name absteigend", -- 2
-        "Kills aufsteigend", -- 3
-        "Kills absteigend", -- 4
-        "Letzter Kill aufsteigend", -- 5
-        "Letzter Kill absteigend" -- 6
+        KillCounter.L["SortFilter1"],
+        KillCounter.L["SortFilter2"],
+        KillCounter.L["SortFilter3"],
+        KillCounter.L["SortFilter4"],
+        KillCounter.L["SortFilter5"],
+        KillCounter.L["SortFilter6"]
     }
 
-    for k, v in pairs(sorts) do
+    for _, v in pairs(sorts) do
         local info = UIDropDownMenu_CreateInfo()
         info.func = KillCounterListFrameSortOption_SetValue
         info.text = v
@@ -103,13 +96,26 @@ local function KillCounter_GetGUIDType(guid)
     return type, id;
 end
 
+function KillCounter_OpenTooltip(frame, tooltip)
+    GameTooltip:SetOwner(frame, "ANCHOR_TOPRIGHT");
+    GameTooltip:SetText(KillCounter.L[tooltip], nil, nil, nil, nil, 1);
+end
+
+function KillCounterListFrameSortOption_SetValue(newValue)
+    UIDropDownMenu_SetSelectedID(KillCounterListFrameSortOption, newValue:GetID());
+    KillCounterCharDB.options.sort = newValue:GetID()
+    if KillCounterListFrame:IsVisible() then
+        KillCounter_Update()
+    end
+end
+
 function KillCounter_OnLoad()
     KillCounterRow1:SetNormalFontObject("GameFontNormal")
     KillCounterRow1:SetNormalTexture("")
     KillCounterRow1:Show()
-    KillCounterRow1Text:SetText("Name")
-    KillCounterRow1Kills:SetText("Kills")
-    KillCounterRow1Level:SetText("Letzter Kill")
+    KillCounterRow1Text:SetText(KillCounter.L["Name"])
+    KillCounterRow1Kills:SetText(KillCounter.L["Kills"])
+    KillCounterRow1Level:SetText(KillCounter.L["LastKill"])
 
     -- tab menu
     PanelTemplates_SetNumTabs(KillCounterListFrame, 2);
@@ -144,17 +150,25 @@ function KillCounter_OnLoad()
                 }
             end
 
+            KillCounterListFrameTab1:SetText(KillCounter.L["ListFrameTab1"])
+            KillCounterListFrameTab2:SetText(KillCounter.L["ListFrameTab2"])
+            KillCounterListFrameTitle:SetText(KillCounter.L["Kills"])
+
             UIDropDownMenu_SetSelectedID(KillCounterListFrameSortOption, KillCounterCharDB.options.sort);
         elseif event == "UPDATE_MOUSEOVER_UNIT" and UnitExists('mouseover') then
             local type, id = KillCounter_GetGUIDType(UnitGUID("mouseover"));
             if (KillCounterCharDB.kills ~= nil and KillCounterCharDB.kills[type] ~= nil and KillCounterCharDB.kills[type][id] ~= nil) then
-                GameTooltip:AddLine("Kills: " .. KillCounterCharDB.kills[type][id].kills);
+                GameTooltip:AddLine(" ");
+                GameTooltip:AddLine(KillCounter.L["Kills"] .. ": " .. KillCounterCharDB.kills[type][id].kills);
                 GameTooltip:Show()
             end
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             local timestamp, event, hideCaster, s_guid, s_name, s_flags, s_raidflags, d_guid, d_name, d_flags, d_raidflags = CombatLogGetCurrentEventInfo()
             if event == "PARTY_KILL" then
                 local type, id = KillCounter_GetGUIDType(d_guid);
+                if (type == nil or id == nil) then
+                    return
+                end
 
                 if (KillCounterCharDB.kills[type] == nil) then
                     KillCounterCharDB.kills[type] = {}
@@ -165,10 +179,6 @@ function KillCounter_OnLoad()
                         kills = 0
                     }
                 end
-
-                --                if (type ~= "player" and type ~= "creature" and type ~= "pet") then
-                --                    message("neuer type '" .. type .. "', bitte bescheid geben :)")
-                --                end
 
                 KillCounterCharDB.kills[type][id].last = GetTime()
                 KillCounterCharDB.kills[type][id].kills = KillCounterCharDB.kills[type][id].kills + 1
@@ -197,6 +207,8 @@ function KillCounter_Update()
         type = "player"
     elseif (activeTab == 2) then
         type = "creature"
+    elseif (activeTab == 3) then
+        type = "deaths"
     end
 
     FauxScrollFrame_Update(KillCounterListScrollBar, GetItemCount(type) + 1, maxRows, 16); -- 100 = entries
@@ -206,7 +218,7 @@ function KillCounter_Update()
     local allKills = 0;
     if (KillCounterCharDB ~= nil and KillCounterCharDB.kills ~= nil and KillCounterCharDB.kills[type] ~= nil) then
         local tmpTable = {}
-        for k, v in pairs(KillCounterCharDB.kills[type]) do
+        for _, v in pairs(KillCounterCharDB.kills[type]) do
             table.insert(tmpTable, v)
             allKills = allKills + v.kills
         end
@@ -244,7 +256,7 @@ function KillCounter_Update()
         end
     end
 
-    KillCounterListFrameTitle:SetText("Kills (" .. allKills .. ")")
+    KillCounterListFrameTitle:SetText(KillCounter.L["Kills"] .. " (" .. allKills .. ")")
 
     for i = 2, maxRows do
         local btn = _G['KillCounterRow' .. i];
