@@ -1,9 +1,9 @@
 ## Interface: 11302
 ## Title: Kill Counter
 ## Author: derpierre65
-## Notes: A kill counter addon that counts all player kills.
-## Notes-deDE: Dieses Addon zählt alle getätigten Kills (in der Gruppe) für Spieler und Monster.
-## Version: 1.0.1
+## Notes: This addon count all player and monster kills.
+## Notes-deDE: Dieses AddOn zählt alle getätigten Spieler und Monster Kills.
+## Version: 1.0.2
 ## SavedVariablesPerCharacter: KillCounterCharDB
 
 KillCounter.xml

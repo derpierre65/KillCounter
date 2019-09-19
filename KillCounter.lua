@@ -86,6 +86,23 @@ local function KillCounter_SortMenu(frame, level, menuList)
     end
 end
 
+local function KillCounter_GetGUIDType(guid)
+    local x = stringSplit(guid, "-")
+
+    local id = x[table.getn(x) - 1]
+    local type = string.lower(x[1])
+
+    if (type == "pet") then
+        return
+    end
+
+    if (type == "player") then
+        id = x[table.getn(x)];
+    end
+
+    return type, id;
+end
+
 function KillCounter_OnLoad()
     KillCounterRow1:SetNormalFontObject("GameFontNormal")
     KillCounterRow1:SetNormalTexture("")
@@ -115,6 +132,7 @@ function KillCounter_OnLoad()
     -- kill counter frame
     KillCounterListFrame:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
     KillCounterListFrame:RegisterEvent('ADDON_LOADED')
+    KillCounterListFrame:RegisterEvent('UPDATE_MOUSEOVER_UNIT')
     KillCounterListFrame:SetScript('OnEvent', function(self, event, arg1, ...)
         if (event == "ADDON_LOADED" and arg1 == "KillCounter") then
             if (KillCounterCharDB == nil) then
@@ -127,38 +145,33 @@ function KillCounter_OnLoad()
             end
 
             UIDropDownMenu_SetSelectedID(KillCounterListFrameSortOption, KillCounterCharDB.options.sort);
+        elseif event == "UPDATE_MOUSEOVER_UNIT" and UnitExists('mouseover') then
+            local type, id = KillCounter_GetGUIDType(UnitGUID("mouseover"));
+            if (KillCounterCharDB.kills ~= nil and KillCounterCharDB.kills[type] ~= nil and KillCounterCharDB.kills[type][id] ~= nil) then
+                GameTooltip:AddLine("Kills: " .. KillCounterCharDB.kills[type][id].kills);
+                GameTooltip:Show()
+            end
         elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
             local timestamp, event, hideCaster, s_guid, s_name, s_flags, s_raidflags, d_guid, d_name, d_flags, d_raidflags = CombatLogGetCurrentEventInfo()
             if event == "PARTY_KILL" then
-                local x = stringSplit(d_guid, "-")
-
-                local playerid = x[table.getn(x) - 1]
-                local type = string.lower(x[1])
-
-                if (type == "pet") then
-                    return
-                end
-
-                if (type == "player") then
-                    playerid = x[table.getn(x)];
-                end
+                local type, id = KillCounter_GetGUIDType(d_guid);
 
                 if (KillCounterCharDB.kills[type] == nil) then
                     KillCounterCharDB.kills[type] = {}
                 end
-                if (KillCounterCharDB.kills[type][playerid] == nil) then
-                    KillCounterCharDB.kills[type][playerid] = {
+                if (KillCounterCharDB.kills[type][id] == nil) then
+                    KillCounterCharDB.kills[type][id] = {
                         name = d_name,
                         kills = 0
                     }
                 end
 
---                if (type ~= "player" and type ~= "creature" and type ~= "pet") then
---                    message("neuer type '" .. type .. "', bitte bescheid geben :)")
---                end
+                --                if (type ~= "player" and type ~= "creature" and type ~= "pet") then
+                --                    message("neuer type '" .. type .. "', bitte bescheid geben :)")
+                --                end
 
-                KillCounterCharDB.kills[type][playerid].last = GetTime()
-                KillCounterCharDB.kills[type][playerid].kills = KillCounterCharDB.kills[type][playerid].kills + 1
+                KillCounterCharDB.kills[type][id].last = GetTime()
+                KillCounterCharDB.kills[type][id].kills = KillCounterCharDB.kills[type][id].kills + 1
                 KillCounter_Update()
             end
         end
@@ -224,7 +237,7 @@ function KillCounter_Update()
                     third = v.last
                 });
             end
-            if (i == scrollOffset + (maxRows-1)) then
+            if (i == scrollOffset + (maxRows - 1)) then
                 break
             end
             i = i + 1
