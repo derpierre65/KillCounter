@@ -24,7 +24,7 @@ local function GetItemCount(type)
     return i
 end
 
-local function GetLastKill(time)
+local function KillCounter_formatTime(time)
     if (time == nil) then
         return "Unbekannt"
     end
@@ -263,10 +263,9 @@ function KillCounter_Update()
             btn:Show()
             playername:SetText(row.first)
             killCount:SetText(row.second)
-            playerLevel:SetText(GetLastKill(row.third))
+            playerLevel:SetText(KillCounter_formatTime(row.third))
         else
             btn:Hide()
         end
     end
-    --    DEFAULT_CHAT_FRAME:AddMessage("We're at " .. FauxScrollFrame_GetOffset(KillCounterListScrollBar));
 end
