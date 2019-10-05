@@ -30,7 +30,11 @@ local function KillCounter_formatTime(time)
         return KillCounter.L["Unknown"]
     end
 
-    local seconds = math.floor(GetTime() - time)
+    local seconds = math.floor(GetServerTime() - time)
+    if (seconds < 0) then
+        return KillCounter.L["Unknown"]
+    end
+
     if (seconds < 60) then
         if (seconds <= 1) then
             return KillCounter.L["timeFormatSeconds_singular"]
@@ -155,6 +159,17 @@ function KillCounter_OnLoad()
             KillCounterListFrameTitle:SetText(KillCounter.L["Kills"])
 
             UIDropDownMenu_SetSelectedID(KillCounterListFrameSortOption, KillCounterCharDB.options.sort);
+
+            -- todo remove later
+            if (KillCounterCharDB ~= nil and KillCounterCharDB.kills ~= nil) then
+                for _, type in pairs({ "creature", "player" }) do
+                    for _, v in pairs(KillCounterCharDB.kills[type]) do
+                        if (v.last < 1568929168) then
+                            v.last = 1568929168
+                        end
+                    end
+                end
+            end
         elseif event == "UPDATE_MOUSEOVER_UNIT" and UnitExists('mouseover') then
             local type, id = KillCounter_GetGUIDType(UnitGUID("mouseover"));
             if (KillCounterCharDB.kills ~= nil and KillCounterCharDB.kills[type] ~= nil and KillCounterCharDB.kills[type][id] ~= nil) then
@@ -180,7 +195,7 @@ function KillCounter_OnLoad()
                     }
                 end
 
-                KillCounterCharDB.kills[type][id].last = GetTime()
+                KillCounterCharDB.kills[type][id].last = GetServerTime()
                 KillCounterCharDB.kills[type][id].kills = KillCounterCharDB.kills[type][id].kills + 1
                 KillCounter_Update()
             end
