@@ -163,9 +163,11 @@ function KillCounter_OnLoad()
             -- todo remove later
             if (KillCounterCharDB ~= nil and KillCounterCharDB.kills ~= nil) then
                 for _, type in pairs({ "creature", "player" }) do
-                    for _, v in pairs(KillCounterCharDB.kills[type]) do
-                        if (v.last < 1568929168) then
-                            v.last = 1568929168
+                    if (KillCounterCharDB.kills[type] ~= nil) then
+                        for _, v in pairs(KillCounterCharDB.kills[type]) do
+                            if (v.last < 1568929168) then
+                                v.last = 1568929168
+                            end
                         end
                     end
                 end
